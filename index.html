@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>휘매쓰 분수-소수 변환 챌린지!</title>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" defer></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ece9e6, #ffffff);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .hidden {
+            display: none;
+        }
+        #start-screen, #game-screen, #end-screen {
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        #start-screen h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .difficulty-button {
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 1.2em;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            background-color: #4CAF50;
+            color: white;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        .difficulty-button:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+        }
+        #game-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            color: #333;
+        }
+        #energy-bar {
+            width: 100%;
+            height: 25px;
+            background-color: #ddd;
+            border-radius: 12.5px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
+        }
+        #energy {
+            height: 100%;
+            width: 100%;
+            background-color: #76c7c0;
+            transition: width 0.1s linear;
+        }
+        #question {
+            font-size: 1.8em;
+            margin-bottom: 25px;
+            color: #333;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group label {
+            display: block;
+            font-size: 1.2em;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        .input-group input {
+            width: 80%;
+            padding: 10px;
+            font-size: 1.2em;
+            border: 2px solid #4CAF50;
+            border-radius: 8px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        .input-group input:focus {
+            border-color: #45a049;
+            outline: none;
+        }
+        .submit-button {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            background-color: #2196F3;
+            color: white;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        .submit-button:hover {
+            background-color: #0b7dda;
+            transform: scale(1.05);
+        }
+        #score, #lives, #game-time {
+            font-size: 1.2em;
+            color: #333;
+        }
+        #end-screen h2 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        #end-screen p {
+            font-size: 1.3em;
+            margin: 10px 0;
+            color: #555;
+        }
+        #restart-button {
+            padding: 15px 30px;
+            margin-top: 25px;
+            font-size: 1.2em;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            background-color: #2196F3;
+            color: white;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        #restart-button:hover {
+            background-color: #0b7dda;
+            transform: scale(1.05);
+        }
+        @media (max-width: 600px) {
+            .input-group input {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Start Screen -->
+    <div id="start-screen">
+        <h1>휘매쓰 분수-소수 변환 챌린지!</h1>
+        <p>난이도를 선택하세요:</p>
+        <button class="difficulty-button" data-difficulty="최상">최상</button>
+        <button class="difficulty-button" data-difficulty="상">상</button>
+        <button class="difficulty-button" data-difficulty="중">중</button>
+        <button class="difficulty-button" data-difficulty="하">하</button>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="hidden">
+        <div id="game-info">
+            <div id="score">점수: 0</div>
+            <div id="lives">남은 기회: 3</div>
+            <div id="game-time">총 시간: 0초</div>
+        </div>
+        <div id="energy-bar">
+            <div id="energy"></div>
+        </div>
+        <div id="question"></div>
+        <div id="inputs">
+            <div class="input-group">
+                <label for="decimal">소수를 입력하세요 :</label>
+                <input type="number" step="0.1" id="decimal" required>
+            </div>
+            <button class="submit-button">제출</button>
+        </div>
+    </div>
+
+    <!-- End Screen -->
+    <div id="end-screen" class="hidden">
+        <h2>게임 종료!</h2>
+        <p id="final-score">최종 점수: 0</p>
+        <p id="final-time">총 시간: 0초</p>
+        <button id="restart-button">다시 시작</button>
+    </div>
+
+    <script>
+        // 초기 변수 설정
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const endScreen = document.getElementById('end-screen');
+        const difficultyButtons = document.querySelectorAll('.difficulty-button');
+        const scoreDisplay = document.getElementById('score');
+        const livesDisplay = document.getElementById('lives');
+        const gameTimeDisplay = document.getElementById('game-time');
+        const energyBar = document.getElementById('energy');
+        const questionElement = document.getElementById('question');
+        const inputsDiv = document.getElementById('inputs');
+        const decimalInput = document.getElementById('decimal');
+        const submitButton = document.querySelector('.submit-button');
+        const finalScore = document.getElementById('final-score');
+        const finalTime = document.getElementById('final-time');
+        const restartButton = document.getElementById('restart-button');
+
+        let difficulty;
+        let timePerQuestion;
+        let score = 0;
+        let lives = 3;
+        let totalGameTime = 0;
+        let questionTimer;
+        let overallTimer;
+        let correctDecimal;
+        let speedMultiplier = 1;
+
+        // 난이도 설정
+        const difficultySettings = {
+            '최상': { time: 20, points: 20 },
+            '상': { time: 30, points: 15 },
+            '중': { time: 40, points: 13 },
+            '하': { time: null, points: 10 }
+        };
+
+        // 시작 화면에서 난이도 선택
+        difficultyButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                difficulty = button.getAttribute('data-difficulty');
+                timePerQuestion = difficultySettings[difficulty].time;
+                score = 0;
+                lives = 3;
+                totalGameTime = 0;
+                speedMultiplier = 1;
+                updateDisplay();
+                startScreen.classList.add('hidden');
+                gameScreen.classList.remove('hidden');
+                startOverallTimer();
+                generateQuestion();
+            });
+        });
+
+        // 전체 게임 시간 타이머
+        function startOverallTimer() {
+            overallTimer = setInterval(() => {
+                totalGameTime++;
+                gameTimeDisplay.textContent = `총 시간: ${totalGameTime}초`;
+            }, 1000);
+        }
+
+        // 게임 종료
+        function endGame() {
+            clearInterval(overallTimer);
+            clearInterval(questionTimer);
+            finalScore.textContent = `최종 점수: ${score}`;
+            finalTime.textContent = `총 시간: ${totalGameTime}초`;
+            gameScreen.classList.add('hidden');
+            endScreen.classList.remove('hidden');
+        }
+
+        // 재시작 버튼
+        restartButton.addEventListener('click', () => {
+            endScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+        });
+
+        // 점수 및 생명 업데이트
+        function updateDisplay() {
+            scoreDisplay.textContent = `점수: ${score}`;
+            livesDisplay.textContent = `남은 기회: ${lives}`;
+        }
+
+        // 에너지 바 초기화
+        function resetEnergyBar() {
+            energyBar.style.width = '100%';
+        }
+
+        // 질문 생성
+        function generateQuestion() {
+            resetEnergyBar();
+            if (timePerQuestion) {
+                let duration = (timePerQuestion / speedMultiplier) * 1000;
+                let startTime = Date.now();
+                questionTimer = setInterval(() => {
+                    let elapsed = Date.now() - startTime;
+                    let percentage = Math.max(100 - (elapsed / duration) * 100, 0);
+                    energyBar.style.width = `${percentage}%`;
+                    if (elapsed >= duration) {
+                        clearInterval(questionTimer);
+                        handleTimeout();
+                    }
+                }, 100);
+            }
+
+            // 분모 10인 분수 또는 혼합수 생성
+            let fractionData = generateFraction();
+            let integerPart = fractionData.integer;
+            let numerator = fractionData.numerator;
+            let denominator = fractionData.denominator; // 항상 10
+            let decimalValue = parseFloat((integerPart + numerator / denominator).toFixed(1));
+            correctDecimal = decimalValue.toFixed(1);
+
+            // 문제 텍스트 설정 (MathJax 사용)
+            let problemText = `분수를 소수로 변환하세요.<br>\\(${integerPart > 0 ? integerPart : ''}${integerPart > 0 ? '\\ ' : ''}\\frac{${numerator}}{${denominator}}\\)`;
+            questionElement.innerHTML = problemText;
+
+            // 이전 입력값 초기화
+            decimalInput.value = '';
+
+            // MathJax 랜더링
+            MathJax.typesetPromise();
+        }
+
+        // 분수 생성 함수 (혼합수 포함)
+        function generateFraction() {
+            let isMixed = Math.random() < 0.5; // 50% 확률로 혼합수
+            let integer = 0;
+            let numerator = 0;
+            const denominator = 10;
+
+            if (isMixed) {
+                integer = getRandomInt(1, 10); // 정수 부분 1~10
+                numerator = getRandomInt(1, denominator - 1); // 분자 1~9
+            } else {
+                integer = 0;
+                numerator = getRandomInt(1, denominator - 1); // 분자 1~9
+            }
+
+            return { integer, numerator, denominator };
+        }
+
+        // 시간 초과 처리
+        function handleTimeout() {
+            loseLife();
+            showCorrectAnswer();
+            generateQuestion();
+        }
+
+        // 생명 감소
+        function loseLife() {
+            lives--;
+            updateDisplay();
+            if (lives <= 0) {
+                endGame();
+            }
+        }
+
+        // 정답 표시
+        function showCorrectAnswer() {
+            alert(`시간 초과! 정답은 ${correctDecimal}입니다.`);
+        }
+
+        // 답 제출 시 처리
+        submitButton.addEventListener('click', () => {
+            clearInterval(questionTimer);
+            const userDecimal = decimalInput.value.trim();
+
+            // 입력값 유효성 검사
+            if (userDecimal === '') {
+                alert('소수를 입력해주세요.');
+                // 타이머 재시작
+                resetEnergyBar();
+                generateQuestion();
+                return;
+            }
+
+            // 소수점 이하 한 자리로 반올림하여 비교
+            const userDecimalRounded = parseFloat(userDecimal).toFixed(1);
+
+            if (userDecimalRounded === correctDecimal) {
+                score += difficultySettings[difficulty].points;
+                updateDisplay();
+                speedMultiplier *= 1.01;
+            } else {
+                loseLife();
+                alert(`틀렸습니다! 정답은 ${correctDecimal}입니다.`);
+            }
+            generateQuestion();
+        });
+
+        // 정수 랜덤 생성
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+    </script>
+
+</body>
+</html>
